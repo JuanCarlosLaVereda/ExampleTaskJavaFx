@@ -1,6 +1,7 @@
 module es.ieslavereda.demojavafx {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.desktop;
 
 
     opens es.ieslavereda.demojavafx to javafx.fxml;
