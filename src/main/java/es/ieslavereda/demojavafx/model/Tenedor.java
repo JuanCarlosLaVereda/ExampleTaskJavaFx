@@ -8,14 +8,18 @@ import java.awt.*;
 public class Tenedor {
     @FXML
     private Label label;
+    private int id;
 
-    public Tenedor(Label label) {
+    public Tenedor(Label label, int id) {
         this.label = label;
+        this.id = id;
     }
 
     public Label getLabel() {
         return label;
     }
 
-
+    public int getId() {
+        return id;
+    }
 }

@@ -12,6 +12,9 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Filosofo {
     private Tenedor tenedor_derecha;
@@ -19,8 +22,8 @@ public class Filosofo {
     private Label label;
 
     public Filosofo(Label label, Tenedor tenedor_derecha, Tenedor tenedor_izquierda) {
-        tenedor_derecha = tenedor_izquierda;
-        tenedor_izquierda = tenedor_derecha;
+        this.tenedor_derecha = tenedor_derecha;
+        this.tenedor_izquierda = tenedor_izquierda;
         this.label = label;
     }
 
@@ -46,51 +49,53 @@ public class Filosofo {
     }
 
     public void come(){
-        TaskComer task = new TaskComer();
-
-        // Crear un hilo que ejecute la tarea
-        Thread thread = new Thread(task);
-        thread.setDaemon(true);  // Hacer que el hilo sea daemon para que no bloquee el cierre de la app
-        thread.start();  // Iniciar el hilo que ejecuta la tarea de comer
+       TaskComer taskComer = new TaskComer();
+       Thread thread = new Thread(taskComer);
+       thread.start();
     }
 
-    private class TaskComer extends Task<RegionColor> {
+    private class TaskComer extends Task<List<RegionColor>> {
 
         public TaskComer() {
-            valueProperty().addListener((observableValue, oldValue, newValue) -> {
-                if (newValue != null) {
-                    newValue.getRegion().setBackground(new Background(new BackgroundFill(newValue.getColor(), new CornerRadii(5), new Insets(-5))));
+            valueProperty().addListener((observableValue, oldValue, newValues) -> {
+
+                if (newValues != null) {
+                    for (RegionColor newValue : newValues) {
+                        newValue.getRegion().setBackground(new Background(new BackgroundFill(newValue.getColor(), new CornerRadii(5), new Insets(-5))));
+                    }
+
                 }
             });
         }
         @Override
-        protected RegionColor call() throws Exception {
+        protected List<RegionColor> call() throws Exception {
             while (true){
-                synchronized (getTenedor_izquierda()) {
-                    updateValue(new RegionColor(tenedor_izquierda.getLabel(), Color.RED));
-                    updateValue(new RegionColor(label, Color.RED));
-
-                    // Filósofo espera por el tenedor derecho
-                    synchronized (getTenedor_derecha()) {
-                        updateValue(new RegionColor(tenedor_derecha.getLabel(), Color.RED));
-
-                        // Ahora el filósofo tiene ambos tenedores, puede empezar a comer
-                        updateValue(new RegionColor(label, Color.GREEN));
-                        updateValue(new RegionColor(tenedor_derecha.getLabel(), Color.GREEN));
-                        updateValue(new RegionColor(tenedor_izquierda.getLabel(), Color.GREEN));
-
-                        // Simulación de comer (3 segundos)
+                Tenedor tenedor_menor;
+                Tenedor tenedor_mayor;
+                if (tenedor_izquierda.getId()<tenedor_derecha.getId()){
+                    tenedor_menor = tenedor_izquierda;
+                    tenedor_mayor = tenedor_derecha;
+                } else {
+                    tenedor_menor = tenedor_derecha;
+                    tenedor_mayor = tenedor_izquierda;
+                }
+                synchronized (tenedor_menor) {
+                    updateValue(Arrays.asList(new RegionColor(tenedor_menor.getLabel(), Color.RED),
+                                    new RegionColor(label, Color.RED))
+                    );
+                    Thread.sleep(1);
+                    synchronized (tenedor_mayor) {
+                        updateValue(Arrays.asList(new RegionColor(tenedor_mayor.getLabel(), Color.RED), new RegionColor(label, Color.GREEN),
+                                new RegionColor(tenedor_derecha.getLabel(), Color.GREEN), new RegionColor(tenedor_izquierda.getLabel(), Color.GREEN)));
                         Thread.sleep(3000);
 
                         // Después de comer, el filósofo deja ambos tenedores
-                        updateValue(new RegionColor(tenedor_derecha.getLabel(), Color.TRANSPARENT));
-                        updateValue(new RegionColor(tenedor_izquierda.getLabel(), Color.TRANSPARENT));
-                        updateValue(new RegionColor(label, Color.TRANSPARENT));
+                        updateValue(Arrays.asList(new RegionColor(tenedor_derecha.getLabel(), Color.TRANSPARENT), new RegionColor(tenedor_izquierda.getLabel(), Color.TRANSPARENT),
+                                new RegionColor(label, Color.TRANSPARENT)));
+                        Thread.sleep(1);
                     }
                 }
-
-                // El filósofo se toma una siesta (5 segundos)
-                Thread.sleep(5000);
+                Thread.sleep(4000);
             }
         }
     }
